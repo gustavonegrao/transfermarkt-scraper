@@ -67,7 +67,43 @@ Todos os parsers são testados contra fixtures HTML/JSON reais do Transfermarkt 
 - User-Agent identifica o projeto acadêmico.
 - Cache HTTP local (`.scrapy/httpcache`) reduz carga durante desenvolvimento.
 
+## Entrega 04 — Carga em DuckDB (star schema)
+
+Depois de gerar os JSONL em `data/`, rode o loader:
+
+```bash
+python -m tfscrap.load --data-dir data --db db/tfscrap.duckdb
+```
+
+O script dropa e recria todo o schema (`schema.sql`) e popula 4 dimensões
+(`dim_competition`, `dim_club`, `dim_player`, `dim_date`) e 3 fatos
+(`fact_stats`, `fact_injury`, `fact_transfer`).
+
+O arquivo `db/tfscrap.duckdb` é versionado no Git para que qualquer colaborador
+com o repo clonado consulte os dados localmente — sem servidor:
+
+```bash
+duckdb db/tfscrap.duckdb
+# ou via Python:
+python -c "import duckdb; print(duckdb.connect('db/tfscrap.duckdb').execute('SELECT COUNT(*) FROM dim_player').fetchone())"
+```
+
+> **Atenção**: o formato `.duckdb` é versionado — mantenha `duckdb>=1.1,<2` no
+> `requirements.txt` para garantir compatibilidade entre colaboradores. Se o
+> arquivo passar de ~50 MB, migre para git-lfs.
+
+Para o sub-tree completo (scraping + carga):
+
+```bash
+python -m tfscrap competitions -p seeds/competitions.json > data/competitions.jsonl
+python -m tfscrap clubs         -p data/competitions.jsonl > data/clubs.jsonl
+python -m tfscrap players       -p data/clubs.jsonl        > data/players.jsonl
+python -m tfscrap appearances   -p data/players.jsonl      > data/appearances.jsonl
+python -m tfscrap injuries      -p data/players.jsonl      > data/injuries.jsonl
+python -m tfscrap transfers     -p data/players.jsonl      > data/transfers.jsonl
+python -m tfscrap.load          --data-dir data --db db/tfscrap.duckdb
+```
+
 ## Fora de escopo nesta entrega
 
-- Carga em DuckDB (star schema) — Entrega 04.
 - Feature engineering e modelos preditivos — Entrega 06.

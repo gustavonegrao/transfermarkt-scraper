@@ -6,6 +6,7 @@ venv/
 .ruff_cache/
 .scrapy/
 data/
+# db/ fica versionado — é o artefato da Entrega 04
 *.egg-info/
 .coverage
 htmlcov/
